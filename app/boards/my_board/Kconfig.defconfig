@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Roland Ma
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MY_BOARD
+if BOARD_NUCLEO_F767ZI
 
 if NETWORKING
 
