@@ -1,7 +1,9 @@
+#include "our_driver.h"
+
 #include "zephyr/device.h"
 #include "zephyr/devicetree.h"
 #include "zephyr/logging/log.h"
-#include "zephyr/logging/log_core.h"
+
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 
@@ -17,19 +19,33 @@ struct our_driver_config
 struct our_driver_data
 {
     bool led_state;
+    uint32_t blink_period;
 };
+
+/* Custom extension API */
+int our_driver_set_blink_period(const struct device *dev, uint32_t period)
+{
+    struct our_driver_data *data = dev->data;
+
+    data->blink_period = period;
+
+    LOG_INF("blink_period changed to %d", period);
+
+    return 0;
+}
 
 static int sample_fetch_my_impl(const struct device *dev,
                                 enum sensor_channel chan)
 {
-
     const struct our_driver_config *cfg = dev->config;
     struct our_driver_data *data = dev->data;
-    /* Encender LED */
+
     gpio_pin_set_dt(&cfg->led, 1);
+
     data->led_state = true;
 
-    LOG_INF("Led ON  , channel %d", chan);
+    LOG_INF("Led ON, channel %d", chan);
+
     return 0;
 }
 
@@ -37,15 +53,16 @@ static int channel_get_my_impl(const struct device *dev,
                                enum sensor_channel chan,
                                struct sensor_value *val)
 {
-
     const struct our_driver_config *cfg = dev->config;
     struct our_driver_data *data = dev->data;
-    /* Apagar LED */
+
     gpio_pin_set_dt(&cfg->led, 0);
 
     data->led_state = false;
 
-    LOG_INF("Led OFF , channel %d", chan);
+    LOG_INF("Led OFF, channel %d", chan);
+    LOG_INF("blink_period = %d", data->blink_period);
+
     return 0;
 }
 
@@ -54,11 +71,10 @@ static DEVICE_API(sensor, api_iomico_lecture) = {
     .channel_get = channel_get_my_impl,
 };
 
-//// Init function
-
 static int init(const struct device *dev)
 {
     const struct our_driver_config *cfg = dev->config;
+    struct our_driver_data *data = dev->data;
 
     if (!gpio_is_ready_dt(&cfg->led))
     {
@@ -70,7 +86,11 @@ static int init(const struct device *dev)
         &cfg->led,
         GPIO_OUTPUT_INACTIVE);
 
-    LOG_INF("Device Initializated ");
+    data->led_state = false;
+    data->blink_period = 1000;
+
+    LOG_INF("Device Initialized");
+
     return 0;
 }
 

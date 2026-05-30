@@ -6,6 +6,8 @@
 #include <zephyr/logging/log.h>
 // #define SLEEP_TIME_MS 1000
 
+#include "our_driver.h"
+
 /* The devicetree node identifier for the "led0" alias. */
 #define LED_NODE DT_ALIAS(app_led)
 
@@ -24,25 +26,25 @@ namespace {
     }
 }
 
+
 int main(void)
 {
-    bool led_state = true;
+    const struct device *driver =
+        DEVICE_DT_GET(DT_NODELABEL(our_driver0));
 
-    if (!gpio_is_ready_dt(&led))
+    if (!device_is_ready(driver))
+    {
+        LOG_ERR("Driver not ready");
         return 0;
+    }
 
-    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0)
-        return 0;
+    our_driver_set_blink_period(driver, 500);
 
-    while (1) {
-        // if (gpio_pin_toggle_dt(&led) < 0)
-        //     return 0;
-
-        // led_state = !led_state;
-        // LOG_INF("LED state: %s", led_state ? "ON" : "OFF");
-        // k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
+    while (1)
+    {
         test();
         k_msleep(1000);
     }
+
     return 0;
 }
