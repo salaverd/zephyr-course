@@ -6,3 +6,4 @@ config APP_HEARTBEAT_PERIOD_MS
       Defines the blink period for the heartbeat LED in milliseconds.
 
 source "Kconfig.zephyr"
+rsource "drivers/our_driver/Kconfig"

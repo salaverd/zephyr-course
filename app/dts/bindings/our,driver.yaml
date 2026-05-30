@@ -1,0 +1,9 @@
+description : Our Simple GPIO driver
+compatible : "our,driver"
+include : base.yaml
+
+properties:
+  led-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO used by the driver LED
