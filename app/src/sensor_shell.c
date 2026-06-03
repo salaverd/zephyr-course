@@ -1,48 +1,33 @@
-#include <zephyr/shell/shell.h>
+#include <stdlib.h>
+
 #include <zephyr/device.h>
-#include <zephyr/drivers/sensor.h>
+#include <zephyr/shell/shell.h>
 
 #include "our_driver.h"
 
 static const struct device *sensor_dev = DEVICE_DT_GET(DT_NODELABEL(our_driver0));
 
-static int cmd_info(const struct shell *sh, size_t argc, char **argv)
+static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 {
-    shell_print(sh, "Device: %s", sensor_dev->name);
+    ARG_UNUSED(argc);
 
-    shell_print(sh, "Ready: %s", device_is_ready(sensor_dev) ? "yes" : "no");
+    long value = strtol(argv[1], NULL, 10);
 
-    return 0;
-}
+    if (value < 100 || value > 5000)
+    {
+        shell_error(sh, "Value must be between 100 and 5000 ms");
+        return -EINVAL;
+    }
 
-static int cmd_fetch(const struct shell *sh, size_t argc, char **argv)
-{
-    int ret = sensor_sample_fetch(sensor_dev);
+    int ret = our_driver_set_blink_period(sensor_dev, (uint32_t)value);
 
     if (ret)
     {
-        shell_error(sh, "sensor_sample_fetch failed (%d)", ret);
+        shell_error(sh, "Failed to set value (%d)", ret);
         return ret;
     }
 
-    shell_print(sh, "Sample fetched");
-
-    return 0;
-}
-
-static int cmd_read(const struct shell *sh, size_t argc, char **argv)
-{
-    struct sensor_value val;
-
-    int ret = sensor_channel_get( sensor_dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
-
-    if (ret)
-    {
-        shell_error(sh, "sensor_channel_get failed (%d)", ret);
-        return ret;
-    }
-
-    shell_print(sh, "Value: %d.%06d", val.val1, val.val2);
+    shell_print(sh, "Blink period set to %ld ms", value);
 
     return 0;
 }
@@ -50,11 +35,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sensor_cmds,
 
-    SHELL_CMD(fetch, NULL, "Call sensor_sample_fetch()", cmd_fetch),
-
-    SHELL_CMD(read, NULL, "Call sensor_channel_get()", cmd_read),
-
-    SHELL_CMD(info, NULL, "Device information", cmd_info),
+    SHELL_CMD_ARG(set, NULL, "Set blink period", cmd_set, 2, 0),
 
     SHELL_SUBCMD_SET_END);
 
